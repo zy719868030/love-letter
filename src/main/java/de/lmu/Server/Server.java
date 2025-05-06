@@ -36,7 +36,6 @@ public class Server {
 
     private static void handleClient(Socket socket, Set<String> nicknames, List<PrintWriter> clientWriters) {
         try {
-            // 1. 连接建立
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
