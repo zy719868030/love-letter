@@ -1,13 +1,13 @@
 package de.lmu.client;
 
 import de.lmu.gamepackage.GameMove;
+import de.lmu.gamepackage.GameSession;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Client {
 
@@ -29,7 +29,7 @@ public class Client {
         System.out.println("You are " + response + "ed" );
 
         if(response.equals("accept")) {
-            String welcomeMsg = in.readLine();       //welcome nickname
+            String welcomeMsg = in.readLine();
             System.out.println(welcomeMsg);
 
             new Thread(() -> {
@@ -39,7 +39,7 @@ public class Client {
                         System.out.println(serverMsg);
                     }
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    System.out.println("Disconnected from server.");
                 }
             }).start();
 
