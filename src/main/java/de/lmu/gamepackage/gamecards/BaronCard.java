@@ -2,6 +2,7 @@ package de.lmu.gamepackage.gamecards;
 
 import de.lmu.gamepackage.Card;
 import de.lmu.gamepackage.GameSession;
+import de.lmu.gamepackage.Player;
 
 public class BaronCard extends Card {
     final String name = "Baron Talus";
@@ -48,4 +49,29 @@ public class BaronCard extends Card {
     public void play(int target) {
     }
 
+    public void play(String targetName) {
+        Player target = gameSession.getPlayer(targetName);
+
+        if (target == null || target.isEliminated()) {
+            System.out.println("[ERROR] Invalid or eliminated target.");
+            return;
+        }
+
+        Player currentPlayer = gameSession.getCurrentPlayer();
+        Card yourCard = currentPlayer.getHand().get(0);
+        Card targetCard = target.getHand().get(0);
+
+        System.out.println("[INFO] " + currentPlayer.getName() + " (" + yourCard.getName() + ") vs "
+                + target.getName() + " (" + targetCard.getName() + ")");
+
+        if (yourCard.getValue() > targetCard.getValue()) {
+            System.out.println("[RESULT] " + target.getName() + " is eliminated.");
+            target.setEliminated(true);
+        } else if (yourCard.getValue() < targetCard.getValue()) {
+            System.out.println("[RESULT] " + currentPlayer.getName() + " is eliminated.");
+            currentPlayer.setEliminated(true);
+        } else {
+            System.out.println("[RESULT] It's a tie. Nothing happens.");
+        }
+    }
 }

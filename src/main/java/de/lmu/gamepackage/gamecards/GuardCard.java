@@ -2,6 +2,7 @@ package de.lmu.gamepackage.gamecards;
 
 import de.lmu.gamepackage.Card;
 import de.lmu.gamepackage.GameSession;
+import de.lmu.gamepackage.Player;
 
 public class GuardCard extends Card {
     final String name = "Guard Odette";
@@ -47,6 +48,32 @@ public class GuardCard extends Card {
     }
 
     public void play(int target) {
+    }
+
+    public void play(String targetName, String guessedCardName) {
+        Player target = gameSession.getPlayer(targetName);
+
+        if (target == null || target.isEliminated()) {
+            System.out.println("[ERROR] Invalid or eliminated target.");
+            return;
+        }
+
+        if (guessedCardName.equalsIgnoreCase("Guard")) {
+            System.out.println("[INFO] Guard cannot be guessed.");
+            return;
+        }
+
+        Card targetCard = target.getHand().get(0);
+        if (targetCard.getName().equalsIgnoreCase(guessedCardName)) {
+            System.out.println("Correct guess! " + target.getName() + " is eliminated.");
+            target.setEliminated(true);
+        } else {
+            System.out.println("Wrong guess.");
+        }
+    }
+
+    public void play(String targetName) {
+        throw new UnsupportedOperationException("Guard requires a guessed card to play.");
     }
 
 }

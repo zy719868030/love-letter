@@ -14,6 +14,7 @@ public abstract class Card {
 //    }
     public Card(){};
 
+
     public String getName() {
         return name;
     }
@@ -34,6 +35,11 @@ public abstract class Card {
         return amount;
     }
 
-    public abstract void play(int target);
-    public abstract void play();
+    public abstract void play();                          // For no-target cards
+    public abstract void play(int target);                // For index-based cards
+    public abstract void play(String targetName);         // For name-targeted cards
+
+    public void play(String targetName, String guessedCardName) {
+        throw new UnsupportedOperationException("This card does not support guessing play.");
+    }
 }

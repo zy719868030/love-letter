@@ -2,6 +2,7 @@ package de.lmu.gamepackage.gamecards;
 
 import de.lmu.gamepackage.Card;
 import de.lmu.gamepackage.GameSession;
+import de.lmu.gamepackage.Player;
 
 public class PrinceCard extends Card {
     final String name = "Prince Arnaud";
@@ -48,6 +49,38 @@ public class PrinceCard extends Card {
     }
 
     public void play(int target) {
+    }
+
+    public void play(String targetName) {
+        Player target = gameSession.getPlayer(targetName);
+        if (target == null || target.isEliminated()) {
+            System.out.println("[ERROR] Invalid or eliminated target.");
+            return;
+        }
+
+        Card discarded = target.getHand().remove(0);
+        System.out.println("[Prince Effect] " + target.getName() + " discarded: " + discarded.getName());
+
+        // Special case: Princess = elimination
+        if (discarded.getName().equalsIgnoreCase("Princess Annette")) {
+            System.out.println("[RESULT] " + target.getName() + " discarded the Princess and is eliminated!");
+            target.setEliminated(true);
+            return;
+        }
+
+        // Draw a replacement card
+        Card newCard;
+        if (!gameSession.getDeck().isEmpty()) {
+            newCard = gameSession.getDeck().draw();
+        } else if (!gameSession.getCardsAside().isEmpty()) {
+            newCard = gameSession.getCardsAside().remove(0); // Last resort
+        } else {
+            System.out.println("[WARNING] No cards left to draw.");
+            return;
+        }
+
+        target.addCard(newCard);
+        System.out.println("[INFO] " + target.getName() + " drew a new card.");
     }
 
 }

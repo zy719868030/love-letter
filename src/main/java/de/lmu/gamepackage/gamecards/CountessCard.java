@@ -43,11 +43,14 @@ public class CountessCard extends Card {
     }
 
     public void play() {
-        System.out.println(this.name);
-        return;
+        System.out.println("[Countess Effect] Countess has no active effect when played.");
     }
 
     public void play(int target) {
+        throw new UnsupportedOperationException("Countess does not target any player.");
     }
 
+    public void play(String targetName) {
+        throw new UnsupportedOperationException("Countess does not target any player.");
+    }
 }

@@ -2,6 +2,7 @@ package de.lmu.gamepackage.gamecards;
 
 import de.lmu.gamepackage.Card;
 import de.lmu.gamepackage.GameSession;
+import de.lmu.gamepackage.Player;
 
 public class HandmaidCard extends Card {
     final String name = "Handmaid Susannah";
@@ -41,12 +42,18 @@ public class HandmaidCard extends Card {
         return amount;
     }
 
-    public void play() {
-        System.out.println(this.name);
-        return;
-    }
-
     public void play(int target) {
     }
 
+    public void play(String targetName) {
+        throw new UnsupportedOperationException("Handmaid does not support targeted play.");
+    }
+
+    public void play() {
+        Player currentPlayer = gameSession.getCurrentPlayer();
+        if (currentPlayer != null) {
+            currentPlayer.setProtected(true);
+            System.out.println("[INFO] " + currentPlayer.getName() + " is now protected by Handmaid.");
+        }
+    }
 }

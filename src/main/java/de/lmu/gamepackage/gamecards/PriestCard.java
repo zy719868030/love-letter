@@ -2,6 +2,7 @@ package de.lmu.gamepackage.gamecards;
 
 import de.lmu.gamepackage.Card;
 import de.lmu.gamepackage.GameSession;
+import de.lmu.gamepackage.Player;
 
 public class PriestCard extends Card {
     final String name = "Priest Tomas";
@@ -37,12 +38,29 @@ public class PriestCard extends Card {
         return amount;
     }
 
-    public void play(){
-        System.out.println(this.name);
-        return;
+    public void play() {
+        throw new UnsupportedOperationException("Priest requires a target to play.");
     }
 
-    public void play(int target) {
+    public void play(int targetIndex) {
+        throw new UnsupportedOperationException("Priest uses named target, not index.");
     }
 
+    public void play(String targetName) {
+        Player target = gameSession.getPlayer(targetName);
+        Player current = gameSession.getCurrentPlayer();
+
+        if (target == null || target.isEliminated()) {
+            System.out.println("[ERROR] Invalid or eliminated target.");
+            return;
+        }
+
+        if (target.getHand().isEmpty()) {
+            System.out.println("[INFO] Target has no cards.");
+            return;
+        }
+
+        System.out.println("[Priest View] You (" + current.getName() + ") see <" + target.getName()
+                + ">'s card: " + target.getHand().get(0).getName());
+    }
 }

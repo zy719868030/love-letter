@@ -47,4 +47,27 @@ public class KingCard extends Card {
     public void play(int target) {
     }
 
+    public void play(String targetName) {
+        var target = gameSession.getPlayer(targetName);
+        var currentPlayer = gameSession.getCurrentPlayer();
+
+        if (target == null || target.isEliminated()) {
+            System.out.println("[ERROR] Invalid or eliminated target.");
+            return;
+        }
+
+        if (target.getName().equals(currentPlayer.getName())) {
+            System.out.println("[ERROR] You cannot trade with yourself.");
+            return;
+        }
+
+        // Exchanging both players' only hand
+        var yourCard = currentPlayer.getHand().remove(0);
+        var targetCard = target.getHand().remove(0);
+
+        currentPlayer.addCard(targetCard);
+        target.addCard(yourCard);
+
+        System.out.println("[King Effect] " + currentPlayer.getName() + " traded cards with " + target.getName());
+    }
 }

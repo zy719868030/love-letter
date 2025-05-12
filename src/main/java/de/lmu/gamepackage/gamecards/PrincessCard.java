@@ -43,11 +43,20 @@ public class PrincessCard extends Card {
     }
 
     public void play() {
-        System.out.println(this.name);
-        return;
+        var currentPlayer = gameSession.getCurrentPlayer();
+        if (currentPlayer != null) {
+            currentPlayer.setEliminated(true);
+            System.out.println("[Princess Effect] " + currentPlayer.getName() + " discarded the Princess and is eliminated!");
+        } else {
+            System.out.println("[Princess Effect] Unknown player discarded the Princess.");
+        }
     }
 
     public void play(int target) {
+        throw new UnsupportedOperationException("Princess does not target any player.");
     }
 
+    public void play(String targetName) {
+        throw new UnsupportedOperationException("Princess does not target any player.");
+    }
 }
