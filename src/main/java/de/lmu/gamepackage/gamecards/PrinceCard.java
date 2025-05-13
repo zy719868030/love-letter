@@ -4,6 +4,16 @@ import de.lmu.gamepackage.Card;
 import de.lmu.gamepackage.GameSession;
 import de.lmu.gamepackage.Player;
 
+/**
+ * Represents the “Prince” card (Prince Arnaud) in the game.
+ * <p>
+ * When this card is played or discarded, you choose one player (including yourself)
+ * who must discard their hand (without triggering its effect, unless it is the Princess)
+ * and then draw a new card. If the deck is empty, the player draws the card set aside
+ * at the start of the round. If the discarded card is the Princess, the target is eliminated.
+ * If all other players are protected by the Handmaid, you must choose yourself.
+ * </p>
+ */
 public class PrinceCard extends Card {
     final String name = "Prince Arnaud";
     final int value = 5;
@@ -18,6 +28,11 @@ public class PrinceCard extends Card {
     final int amount = 2;
     GameSession gameSession;
 
+    /**
+     * Constructs a new PrinceCard tied to the given game session.
+     *
+     * @param gameSession the current game session context
+     */
     public PrinceCard(GameSession gameSession) {
         this.gameSession = gameSession;
     }
@@ -43,21 +58,48 @@ public class PrinceCard extends Card {
         return amount;
     }
 
+    /**
+     * Executes the Prince card effect without specifying a target.
+     * <p>
+     * For PrinceArnaud, playing without a target simply logs the card name.
+     * </p>
+     */
     public void play() {
         System.out.println(this.name);
         return;
     }
 
+    /**
+     * Executes the Prince card effect targeting by player index.
+     * <p>
+     * This method is not used; target selection by index is not supported.
+     * </p>
+     *
+     * @param target the index of the target player (unused)
+     */
     public void play(int target) {
     }
 
+    /**
+     * Executes the Prince card effect targeting a player by name.
+     * <p>
+     * The chosen player discards their hand (without triggering its effect unless
+     * it is the Princess) and draws a replacement card. If the discarded card is
+     * the Princess, the target is eliminated. If the deck is empty, the player
+     * draws the card set aside at the start of the round.
+     * </p>
+     *
+     * @param targetName the name of the player to target
+     * @return a message describing the actions taken and the result
+     */
     public String play(String targetName) {
         Player target = gameSession.getPlayer(targetName);
         if (target == null || target.isEliminated()) {
             return "[ERROR] Invalid or eliminated target.";
         }
-
+        gameSession.getCurrentPlayer().increaseDiscardedCardsNumber(5);
         Card discarded = target.getHand().remove(0);
+        target.increaseDiscardedCardsNumber(discarded.getValue());
         String returnMsg = "";
         returnMsg = "[Prince Effect] " + target.getName() + " discarded: " + discarded.getName();
 
@@ -75,10 +117,11 @@ public class PrinceCard extends Card {
             target.addCard(newCard);
         }
         else {
+            target.addCard(gameSession.getCardAside());
             returnMsg += "\n No cards left to draw, so draw the card that were removed at the start of the round.";
         }
 
-        returnMsg += "\n [INFO] " + target.getName() + " drew a new card.";
+        returnMsg += "\n[INFO] " + target.getName() + " drew a new card.";
         return returnMsg;
     }
 

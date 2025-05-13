@@ -3,6 +3,15 @@ package de.lmu.gamepackage.gamecards;
 import de.lmu.gamepackage.Card;
 import de.lmu.gamepackage.GameSession;
 
+/**
+ * Represents the “Countess” card (Countess Wilhelmina) in the game.
+ * <p>
+ * Unlike most cards, the Countess’s text applies while she remains in your hand.
+ * If you ever hold the Countess together with either the King or the Prince,
+ * you are forced to discard the Countess (without revealing the other card).
+ * You may also discard her voluntarily at any time.
+ * </p>
+ */
 public class CountessCard extends Card {
     final String name = "Countess Wilhelmina";
     final int value = 7;
@@ -42,15 +51,35 @@ public class CountessCard extends Card {
         return amount;
     }
 
+    /**
+     * Executes the Countess card’s discard effect.
+     * <p>
+     * Increases the current player’s discard total but has no additional gameplay effect
+     * when played (the mandatory-discard rule is enforced elsewhere).
+     * </p>
+     */
     public void play() {
+        gameSession.getCurrentPlayer().increaseDiscardedCardsNumber(7);
         System.out.println("[Countess Effect] Countess has no active effect when played.");
     }
 
+    /**
+     * Countess does not support targeting another player.
+     *
+     * @param target unused
+     * @throws UnsupportedOperationException always thrown to indicate no target is allowed
+     */
     public void play(int target) {
         throw new UnsupportedOperationException("Countess does not target any player.");
     }
 
-
+    /**
+     * Countess does not support targeting another player by name.
+     *
+     * @param targetName unused
+     * @return never returns normally
+     * @throws UnsupportedOperationException always thrown to indicate no target is allowed
+     */
     public String play(String targetName) {
         throw new UnsupportedOperationException("Countess does not target any player.");
     }

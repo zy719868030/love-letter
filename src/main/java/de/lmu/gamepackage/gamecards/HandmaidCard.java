@@ -4,6 +4,14 @@ import de.lmu.gamepackage.Card;
 import de.lmu.gamepackage.GameSession;
 import de.lmu.gamepackage.Player;
 
+/**
+ * Represents the “Handmaid” card (Handmaid Susannah) in the game.
+ * <p>
+ * When this card is discarded, the current player becomes immune to other players’ card effects
+ * until the start of their next turn. If all other players are protected by the Handmaid,
+ * any effect that requires choosing another player must instead target the player themself.
+ * </p>
+ */
 public class HandmaidCard extends Card {
     final String name = "Handmaid Susannah";
     final int value = 4;
@@ -17,6 +25,11 @@ public class HandmaidCard extends Card {
     final int amount = 2;
     GameSession gameSession;
 
+    /**
+     * Constructs a HandmaidCard tied to the given game session.
+     *
+     * @param gameSession the current game session context
+     */
     public HandmaidCard(GameSession gameSession) {
         this.gameSession = gameSession;
     }
@@ -42,15 +55,35 @@ public class HandmaidCard extends Card {
         return amount;
     }
 
+    /**
+     * Handmaid does not support targeting by player index.
+     *
+     * @param target unused
+     */
     public void play(int target) {
     }
 
+    /**
+     * Handmaid does not support targeted play by player name.
+     *
+     * @param targetName unused
+     * @throws UnsupportedOperationException always thrown to indicate no target is allowed
+     */
     public String play(String targetName) {
         throw new UnsupportedOperationException("Handmaid does not support targeted play.");
     }
 
+    /**
+     * Executes the Handmaid effect: protects the current player from other players' effects
+     * until the start of their next turn.
+     * <p>
+     * Marks the current player as protected and logs the action. Also counts this card
+     * toward the player's discarded cards total.
+     * </p>
+     */
     public void play() {
         Player currentPlayer = gameSession.getCurrentPlayer();
+        currentPlayer.increaseDiscardedCardsNumber(4);
         if (currentPlayer != null) {
             currentPlayer.setProtected(true);
             System.out.println("[INFO] " + currentPlayer.getName() + " is now protected by Handmaid.");

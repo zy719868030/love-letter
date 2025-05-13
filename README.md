@@ -1,6 +1,63 @@
 # Vorproject Yu Zeng
 
+# Love Letter – Quick Reference Guide
 
+# Objective
+Be the last player standing in each round, or hold the highest-value card when the deck runs out, to earn a token of affection. First to collect the required number of tokens wins the game.
+
+# Setup
+
+1.Shuffle the deck and remove one card face-down (secret discard).
+
+2.Deal one card to each player; place the rest as the draw pile.
+
+3.Determine the player order (e.g. by age, last date, or at random).
+
+# Turn Structure
+On your turn:
+
+1.Draw the top card from the pile (now you have two).
+
+2.Play one of your two cards, resolve its effect immediately.
+
+3.Discard the played card face-up to the discard pile.
+
+Play passes to the left.
+
+# Card Effects
+
+Guard (1): Name a player and a card (2–8). If they hold that exact card, they’re out.
+
+Priest (2): Secretly look at another player’s hand.
+
+Baron (3): Compare hands with another player; lower card is out.
+
+Handmaid (4): You’re immune to others’ effects until your next turn.
+
+Prince (5): Choose any player (even yourself) to discard and redraw. Princess discard eliminates.
+
+King (6): Trade hands with another player of your choice.
+
+Countess (7): Must be played if caught with King or Prince.
+
+Princess (8): If you discard her, you’re out.
+
+# End of Round
+A round ends when either:
+
+1.All but one player are eliminated (last player wins), or
+
+2.The draw pile is empty (compare remaining hands; highest wins).
+
+Ties are broken by total value of cards in the discard piles; still tied → all tied players win.
+
+# Scoring & Winning
+
+1.Winner of each round takes one token of affection.
+
+2.Play additional rounds until a player reaches the required number of tokens (4–7 depending on player count).
+
+Congratulations—you’ve won their heart!
 
 ## Getting started
 

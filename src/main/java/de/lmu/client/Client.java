@@ -12,8 +12,27 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
+/**
+ * A simple console‐based client for the Love Letter game server.
+ * <p>
+ * Connects to the server, handles user login (nickname, dating date, birthday),
+ * and then enters a loop to send commands and print server responses.
+ * </p>
+ */
 public class Client {
 
+    /**
+     * Entry point for the client application.
+     * <ol>
+     *   <li>Connects to the server at localhost:8080</li>
+     *   <li>Prompts the user for a nickname and sends it</li>
+     *   <li>If accepted, prompts for last appointment date and birthday (DD/MM/YYYY)</li>
+     *   <li>Starts a background thread to listen for server messages</li>
+     *   <li>Main thread reads console input and sends commands (e.g. /C, /J, /play, bye)</li>
+     * </ol>
+     * @param args ignored
+     * @throws IOException if any socket or I/O error occurs
+     */
     public static void main(String[] args) throws IOException {
 
         Socket socket = new Socket("localhost", 8080);
@@ -32,21 +51,29 @@ public class Client {
             String welcomeMsg = in.readLine();
             System.out.println(welcomeMsg);
 
-//            String datingStr;
-//            while (true) {
-//                System.out.print("Enter the date of your last appointment (DD/MM/YYYY): ");
-//                datingStr = console.readLine();
-//                if (datingStr.matches("\\d{1,2}/\\d{1,2}/\\d{4}")) break;
-//                System.out.println("Invalid format, please try again.");
-//            }
+            String datingStr;
+            while (true) {
+                System.out.print("Enter the date of your last appointment (DD/MM/YYYY): ");
+                datingStr = console.readLine();
+                if (datingStr.matches("\\d{2}/\\d{2}/\\d{4}"))
+                {
+                    out.println(datingStr);
+                    break;
+                }
 
-//            String birthStr;
-//            while (true) {
-//                System.out.print("Enter your birthday (DD/MM/YYYY): ");
-//                birthStr = console.readLine();
-//                if (birthStr.matches("\\d{1,2}/\\d{1,2}/\\d{4}")) break;
-//                System.out.println("Invalid format, please try again.");
-//            }
+                System.out.println("Invalid format, please try again.");
+            }
+
+            String birthStr;
+            while (true) {
+                System.out.print("Enter your birthday (DD/MM/YYYY): ");
+                birthStr = console.readLine();
+                if (birthStr.matches("\\d{2}/\\d{2}/\\d{4}")) {
+                    out.println(birthStr);
+                    break;
+                }
+                System.out.println("Invalid format, please try again.");
+          }
 
 
             new Thread(() -> {
@@ -70,7 +97,7 @@ public class Client {
                 out.println(input);
             }
             socket.close();
-        } else {
+        }else {
         System.out.println("Username is invalid or already taken. Connection closed.");
         }
     }
