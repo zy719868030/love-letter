@@ -37,9 +37,10 @@ public abstract class Card {
 
     public abstract void play();                          // For no-target cards
     public abstract void play(int target);                // For index-based cards
-    public abstract void play(String targetName);         // For name-targeted cards
+    public abstract String play(String targetName);
 
-    public void play(String targetName, String guessedCardName) {
+
+    public String play(String targetName, String guessedCardName) {
         throw new UnsupportedOperationException("This card does not support guessing play.");
     }
 }

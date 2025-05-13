@@ -50,7 +50,8 @@ public class CountessCard extends Card {
         throw new UnsupportedOperationException("Countess does not target any player.");
     }
 
-    public void play(String targetName) {
+
+    public String play(String targetName) {
         throw new UnsupportedOperationException("Countess does not target any player.");
     }
 }

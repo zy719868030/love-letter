@@ -46,21 +46,25 @@ public class PriestCard extends Card {
         throw new UnsupportedOperationException("Priest uses named target, not index.");
     }
 
-    public void play(String targetName) {
+    public String play(String targetName) {
         Player target = gameSession.getPlayer(targetName);
         Player current = gameSession.getCurrentPlayer();
+        if(target.isProtected()){
+            return target.getName() +" is protected.";
+        }
 
         if (target == null || target.isEliminated()) {
             System.out.println("[ERROR] Invalid or eliminated target.");
-            return;
+            return null;
         }
 
         if (target.getHand().isEmpty()) {
             System.out.println("[INFO] Target has no cards.");
-            return;
+            return null;
         }
 
-        System.out.println("[Priest View] You (" + current.getName() + ") see <" + target.getName()
-                + ">'s card: " + target.getHand().get(0).getName());
+//        System.out.println("[Priest View] You (" + current.getName() + ") see <" + target.getName()
+//                + ">'s card: " + target.getHand().get(0).getName());
+        return target.getName() +"'s card:"+ target.getHand().get(0).getName();
     }
 }

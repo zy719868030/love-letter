@@ -50,30 +50,29 @@ public class GuardCard extends Card {
     public void play(int target) {
     }
 
-    public void play(String targetName, String guessedCardName) {
+    public String play(String targetName) {
+        return null;
+    }
+    public String play(String targetName, String guessedCardName) {
         Player target = gameSession.getPlayer(targetName);
 
         if (target == null || target.isEliminated()) {
-            System.out.println("[ERROR] Invalid or eliminated target.");
-            return;
+            return "[ERROR] Invalid or eliminated target.";
         }
-
-        if (guessedCardName.equalsIgnoreCase("Guard")) {
-            System.out.println("[INFO] Guard cannot be guessed.");
-            return;
+        if(target.isProtected()){
+            return target.getName() +" is protected.";
         }
 
         Card targetCard = target.getHand().get(0);
-        if (targetCard.getName().equalsIgnoreCase(guessedCardName)) {
-            System.out.println("Correct guess! " + target.getName() + " is eliminated.");
+        if (targetCard.getValue() == Integer.parseInt(guessedCardName)) {
             target.setEliminated(true);
+            return "Correct guess! " + target.getName() + " is eliminated.";
+
         } else {
-            System.out.println("Wrong guess.");
+            return "Wrong guess.";
         }
     }
 
-    public void play(String targetName) {
-        throw new UnsupportedOperationException("Guard requires a guessed card to play.");
-    }
+
 
 }

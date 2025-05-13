@@ -33,7 +33,8 @@ public class Deck {
 
         shuffle();
 
-        cards.remove(cards.peek());
+        gameSession.setCardAside(cards.pop());
+        //cards.remove(cards.peek());
 
         if(playerCount == 2){
             List<Card> cardsAside = new ArrayList<>();

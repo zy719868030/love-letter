@@ -49,29 +49,33 @@ public class BaronCard extends Card {
     public void play(int target) {
     }
 
-    public void play(String targetName) {
+    public String play(String targetName) {
         Player target = gameSession.getPlayer(targetName);
 
         if (target == null || target.isEliminated()) {
             System.out.println("[ERROR] Invalid or eliminated target.");
-            return;
+            return null;
+        }
+
+        if(target.isProtected()){
+            return target.getName() +" is protected.";
         }
 
         Player currentPlayer = gameSession.getCurrentPlayer();
         Card yourCard = currentPlayer.getHand().get(0);
         Card targetCard = target.getHand().get(0);
 
-        System.out.println("[INFO] " + currentPlayer.getName() + " (" + yourCard.getName() + ") vs "
-                + target.getName() + " (" + targetCard.getName() + ")");
+        String info = "[INFO] " + currentPlayer.getName() + " (" + yourCard.getName() + ") vs "
+                + target.getName() + " (" + targetCard.getName() + ")" + '\n';
 
         if (yourCard.getValue() > targetCard.getValue()) {
-            System.out.println("[RESULT] " + target.getName() + " is eliminated.");
             target.setEliminated(true);
+            return info + "[RESULT] " + target.getName() + " is eliminated.";
         } else if (yourCard.getValue() < targetCard.getValue()) {
-            System.out.println("[RESULT] " + currentPlayer.getName() + " is eliminated.");
             currentPlayer.setEliminated(true);
+            return info + "[RESULT] " + currentPlayer.getName() + " is eliminated.";
         } else {
-            System.out.println("[RESULT] It's a tie. Nothing happens.");
+            return info + "[RESULT] It's a tie. Nothing happens.";
         }
     }
 }

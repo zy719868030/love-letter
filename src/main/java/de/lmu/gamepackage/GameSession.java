@@ -1,12 +1,13 @@
 package de.lmu.gamepackage;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
 
 public class GameSession {
     private Set<Player> players = new HashSet<>();
-    private final Map<String, Integer> scores = new HashMap<>();
+    private Map<String, Integer> scores = new HashMap<>();
     private boolean created = false;
     private boolean started = false;
     private String host;
@@ -14,6 +15,16 @@ public class GameSession {
     private Queue<Player> turnOrder = new LinkedList<>();
     private Player currentPlayer;
     private Deck deck;
+    private final Map<String, LocalDate> lastDatingDate = new HashMap<>();
+    private final Map<String, LocalDate> birthDate      = new HashMap<>();
+    private Card cardAside;
+
+    public void setLastDatingDate(String player, LocalDate date) {
+        lastDatingDate.put(player, date);
+    }
+    public void setBirthDate(String player, LocalDate date) {
+        birthDate.put(player, date);
+    }
 
 
     public boolean isCreated() {
@@ -22,6 +33,10 @@ public class GameSession {
 
     public void setCardsAside(List<Card> cardsAside) {
         this.cardsAside = cardsAside;
+    }
+
+    public void setCardAside(Card cardAside) {
+        this.cardAside = cardAside;
     }
 
     public boolean isStarted() {
@@ -73,13 +88,41 @@ public class GameSession {
         scores.putIfAbsent(nickname, 0);
         return true;
     }
+    public boolean allProtected(){
+        for(Player player: players){
+            if(!currentPlayer.equals(player)){
+                if(!player.isProtected()){
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 
     public void start(Set<String> playerNames) {
         this.started = true;
-        this.turnOrder.clear();
-        this.currentPlayer = null;
+//        List<Player> list = new ArrayList<>();
+//        for (Player p : players) {
+//            if (playerNames.contains(p.getName())) {
+//                list.add(p);
+//            }
+//        }
+        // Sort: the “later” the date of the most recent appointment,
+        // or: if the same, the “later” the birthday (the younger the age).
+//        list.sort((p1, p2) -> {
+//            LocalDate d1 = lastDatingDate.get(p1.getName());
+//            LocalDate d2 = lastDatingDate.get(p2.getName());
+//            int cmp = d2.compareTo(d1);
+//            if (cmp != 0) return cmp;
+//            return birthDate.get(p2.getName())
+//                    .compareTo(birthDate.get(p1.getName()));
+//        });
+        turnOrder.clear();
+//        turnOrder.addAll(list);
+        this.currentPlayer = turnOrder.peek();
 
-        Deck deck = new Deck(this);
+
+        deck = new Deck(this);
         DiscardPile discardPile = new DiscardPile(this);
 
         for (String name : playerNames) {
@@ -90,8 +133,15 @@ public class GameSession {
             }
         }
 
-
         this.currentPlayer = turnOrder.peek();
+        //draw card for each player
+        for (Player p : turnOrder) {
+            p.drawCard(deck.draw());
+        }
+    }
+
+    public void currentPlayerDrawCard(){
+        currentPlayer.drawCard(deck.draw());
     }
 
     public List<Card> getCardsAside() {
@@ -115,10 +165,6 @@ public class GameSession {
         if (turnOrder.isEmpty()) return null;
 
         // Clear the previous player's Handmaid protection
-        if (currentPlayer != null) {
-            currentPlayer.setProtected(false);
-        }
-
         turnOrder.offer(turnOrder.poll());
         currentPlayer = turnOrder.peek();
         return currentPlayer.getName();
@@ -138,6 +184,14 @@ public class GameSession {
                 .filter(p -> !p.isEliminated())
                 .map(Player::getName)
                 .collect(Collectors.toSet());
+    }
+
+    public void reset() {
+        this.created = false;
+        this.started = false;
+        this.players.clear();
+        this.scores.clear();
+        this.host = null;
     }
 
     public boolean isDeckEmpty() {
@@ -175,16 +229,10 @@ public class GameSession {
         return null;
     }
 
-    public void reset() {
-        this.created = false;
-        this.started = false;
-        this.players.clear();
-        this.scores.clear();
-        this.host = null;
-    }
-
     public Deck getDeck() {
         return this.deck;
     }
+
+
 
 }

@@ -83,17 +83,27 @@ public class Server {
 
     //Server notifies players of game events
     public enum GameEventType {
-        TURN, ELIMINATED, ROUND_END, GAME_END
+        TURN, ELIMINATED, ROUND_END, GAME_END, PLAY
     }
 
     private static void broadcastGameEvent(GameEventType type, Map<String, PrintWriter> clientWriters, String... args) {
         String msg = switch (type) {
             case TURN -> "[GAME] It's now <" + args[0] + ">'s turn.";
+            case PLAY -> "[GAME] Player <" + args[0] + "> has played " + args[1] +" in his/her turn.";
             case ELIMINATED -> "[GAME] Player <" + args[0] + "> has been eliminated.";
             case ROUND_END -> "[GAME] Round over! <" + args[0] + "> wins the round.";
             case GAME_END -> "[GAME] Game over! <" + args[0] + "> wins the game!";
         };
         broadcastAll(clientWriters, msg);
+    }
+    private  static void broadcastHandInfo(GameSession gameSession, Map<String, PrintWriter> clientWriters) {
+        for (Map.Entry<String, PrintWriter> entry : clientWriters.entrySet()) {
+            for(Player player : gameSession.getPlayers()) {
+                if(player.getName().equals(entry.getKey())) {
+                    entry.getValue().println(player.handToString());
+                }
+            }
+        }
     }
 
     private static void handleClient(Socket socket, Set<String> nicknames, Map<String, PrintWriter> clientWriters,
@@ -102,8 +112,8 @@ public class Server {
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-            //Check if the nickname is unique, reject if repeated.
             String nickname = in.readLine();
+            //Check if the nickname is unique, reject if repeated.
             if (nicknames.contains(nickname)) {
                 out.println("reject");
                 socket.close();
@@ -115,7 +125,7 @@ public class Server {
             clientWriters.put(nickname,out);
             out.println("accept");
             out.println("welcome " + nickname);
-            out.println("Type </help> to view the available commands");
+            out.println("Type </H> to view the available commands");
 
             //Broadcast “xxx joined the room” to the other clients.
             for (PrintWriter writer : clientWriters.values()) {
@@ -129,14 +139,14 @@ public class Server {
             while ((msg = in.readLine()) != null) {
 
                 //Add help command to prompt users on how to use different commands
-                if (msg.equalsIgnoreCase("/help")) {
+                if (msg.equalsIgnoreCase("/H")) {
                     out.println("Available commands:");
                     out.println("/r <user> <text>   - Send a private message to <user>");
                     out.println("bye                - Leave the chat");
-                    out.println("/help              - Show this help message");
-                    out.println("/create            - Create a new game session");
-                    out.println("/join              - Join the current game session");
-                    out.println("/start             - Start the game (host only)");
+                    out.println("/H                 - Show this help message");
+                    out.println("/C                 - Create a new game session");
+                    out.println("/J                 - Join the current game session");
+                    out.println("/S                 - Start the game (host only)");
                     out.println("/score             - Show current game scores (if implemented)");
                     continue;
                 }
@@ -162,7 +172,7 @@ public class Server {
                 }
 
                 //Create a game, the player who created the game automatically joins the game
-                if (msg.equals("/create")) {
+                if (msg.equals("/C")) {
                     synchronized (gameSession) {
                         if (gameSession.isCreated()) {
                             out.println("Error: A game already exists.");
@@ -178,9 +188,8 @@ public class Server {
                     }
                     continue;
                 }
-
                 //join the game
-                if (msg.equals("/join")) {
+                if (msg.equals("/J")) {
                     synchronized (gameSession) {
                         if (!gameSession.isCreated()) {
                             out.println("Error: No game has been created.");
@@ -197,9 +206,8 @@ public class Server {
                     }
                     continue;
                 }
-
                 //start the game
-                if (msg.equals("/start")) {
+                if (msg.equals("/S")) {
                     synchronized (gameSession) {
                         if (!gameSession.isCreated()) {
                             out.println("Error: No game to start.");
@@ -211,12 +219,9 @@ public class Server {
                             out.println("Error: Only the game creator can start the game.");
                         } else {
                             gameSession.start(nicknames);
-                            String message = "Game started with players: " + gameSession.getPlayersNickname();
-                            out.println(message);
 
-                            //Indicates whose turn it is
-                            String currentPlayer = gameSession.getCurrentPlayerName();
-                            broadcastGameEvent(GameEventType.TURN, clientWriters, currentPlayer);
+                            String message = "Game started with players: " + gameSession.getPlayersNickname();
+                            broadcastAll(clientWriters, message);
 
                             if(gameSession.getPlayers().size() == 2){
                                 String cardsAsideMessage = "";
@@ -224,163 +229,247 @@ public class Server {
                                     cardsAsideMessage += "<" + gameSession.getCardsAside().get(i).getName() + "> ";
                                 }
                                 cardsAsideMessage+="are set aside.";
-                                out.println(cardsAsideMessage);
+                                broadcastAll(clientWriters, cardsAsideMessage);
                             }
 
+                            broadcastHandInfo(gameSession, clientWriters);
+                            //Indicates whose turn it is
+                            String currentPlayer = gameSession.getCurrentPlayerName();
+                            broadcastGameEvent(GameEventType.TURN, clientWriters, currentPlayer);
+                            gameSession.currentPlayerDrawCard();
+                            clientWriters.get(gameSession.getCurrentPlayer().getName()).println(gameSession.getCurrentPlayer().handToString());
 
-                            for (Map.Entry<String, PrintWriter> entry : clientWriters.entrySet()) {
-                                if (!entry.getKey().equals(nickname)) {
-                                    entry.getValue().println(message);
+                        }
+                    }
+                    continue;
+                }
+
+                if(msg.startsWith("/play")) {
+                        synchronized (gameSession) {
+                            if (!gameSession.isCreated()) {
+                                out.println("Error: No game in progress.");
+                                continue;
+                            }
+                            if (!gameSession.isStarted()) {
+                                out.println("Error: The game has not started yet.");
+                                continue;
+                            }
+                            if (!gameSession.getCurrentPlayerName().equals(nickname)) {
+                                out.println("It's not your turn.");
+                                continue;
+                            }
+                            if (!gameSession.getPlayersNickname().contains(nickname)) {
+                                out.println("You are not part of the game.");
+                                continue;
+                            }
+
+                            Player player = gameSession.getPlayer(nickname);
+                            if (player == null || player.isEliminated()) {
+                                out.println("Error: Invalid player or already eliminated.");
+                                continue;
+                            }
+                            // Example format: /play 0 or /play 1
+                            String[] parts = msg.split(" ");
+                            if (parts.length != 2) {
+                                out.println("Usage: /play <0 or 1>");
+                                continue;
+                            }
+
+                            // Countess
+                            List<Card> hand = player.getHand();
+                            boolean hasCountess     = hand.stream().anyMatch(c -> c instanceof CountessCard);
+                            boolean hasPrinceOrKing = hand.stream().anyMatch(c -> c instanceof PrinceCard || c instanceof KingCard);
+                            if (hasCountess && hasPrinceOrKing && !(hand.get(Integer.parseInt(parts[1])) instanceof CountessCard)) {
+                                out.println("[RULE] You must play the Countess if you hold her with a King or Prince.");
+                                continue;
+                            }
+
+                            int cardIndex;
+                            try {
+                                cardIndex = Integer.parseInt(parts[1]);
+                            } catch (NumberFormatException e) {
+                                out.println("Usage: /play <0 or 1>");
+                                continue;
+                            }
+
+                            if (cardIndex < 0 || cardIndex > 1 || player.getHand().size() <= cardIndex) {
+                                out.println("Invalid card index.");
+                                continue;
+                            }
+
+                            Card cardToPlay = player.getHand().get(cardIndex);
+                            player.playCard(cardIndex); // Remove from hand
+                            broadcastGameEvent(GameEventType.PLAY, clientWriters, nickname,
+                                    cardToPlay.getName());
+                            if (cardToPlay instanceof PrincessCard) {
+                                broadcastGameEvent(GameEventType.ELIMINATED, clientWriters, nickname);
+                                out.println("[RULE] You discarded the Princess and are eliminated from the round.");
+                            }
+
+                            // GuardCard
+                            if (cardToPlay instanceof GuardCard guardCard) {
+                                out.println("Guard card needs a target, please type a player's nickname.");
+                                while (true) {
+                                    String targetMessage = in.readLine();
+                                    if (nicknames.contains(targetMessage)) {
+                                        if(gameSession.getCurrentPlayer().getName().equals(targetMessage)){
+                                            out.println("You can not choose yourself as target.");
+                                            continue;
+                                        }
+                                        out.println("Please name a number (other than 1).If that player has that number " +
+                                                "in their hand, that player is knocked out of the round.");
+                                        while (true) {
+                                            String numberMessage = in.readLine();
+                                            if (Integer.parseInt(numberMessage) < 9 && Integer.parseInt(numberMessage) > 1){
+                                                if(gameSession.getPlayer(targetMessage).isProtected()){
+                                                    out.println(gameSession.getPlayer(targetMessage).getName() +" is protected.");
+                                                    break;
+                                                }
+                                                out.println(guardCard.play(targetMessage,numberMessage));
+                                                break;
+                                            }
+                                            else{
+                                                out.println("The number you named is invalid, it should be 2 to 8.");
+                                            }
+                                        }
+                                        break;
+                                    }
+
+                                    else{
+                                        out.println("Can't find "+ targetMessage +" in the game. Please choose a valid " +
+                                                "player.");
+                                    }
                                 }
                             }
+
+                            // PriestCard
+                           else if (cardToPlay instanceof PriestCard priestCard) {
+                                out.println("Priest card needs a target, please type a player's nickname.");
+                                while (true) {
+                                    String targetMessage = in.readLine();
+                                    if (nicknames.contains(targetMessage)) {
+                                        if(gameSession.getCurrentPlayer().getName().equals(targetMessage)){
+                                            out.println("You can not choose yourself as target.");
+                                            continue;
+                                        }
+                                        out.println(priestCard.play(targetMessage));
+
+                                        break;
+                                    }
+                                    else{
+                                        out.println("Can't find "+ targetMessage +" in the game. Please choose a valid " +
+                                                "player.");
+                                    }
+                                }
+                            }
+
+                            // BaronCard
+                            else if (cardToPlay instanceof BaronCard baronCard) {
+                                out.println("Baron card needs a target, please type a player's nickname.");
+                                while (true) {
+                                    String targetMessage = in.readLine();
+                                    if (nicknames.contains(targetMessage)) {
+                                        if(gameSession.getCurrentPlayer().getName().equals(targetMessage)){
+                                            out.println("You can not choose yourself as target.");
+                                            continue;
+                                        }
+                                        out.println(baronCard.play(targetMessage));
+                                        break;
+                                    }
+                                    else{
+                                        out.println("Can't find " + targetMessage + " in the game. Please choose a valid " +
+                                                "player.");
+                                    }
+                                }
+                            }
+
+                            // HandmaidCard
+                            else if (cardToPlay instanceof HandmaidCard handmaidCard) {
+                                handmaidCard.play();  // 调用 play() 方法内会自动设置玩家 protected=true
+                                out.println("You are protected until your next turn.");
+                            }
+
+                            // PrinceCard
+                            else if (cardToPlay instanceof PrinceCard princeCard) {
+                                if(gameSession.allProtected()){
+                                    out.println("Since all other player are protected by handmaid, the target is " +
+                                            "automatically yourself");
+                                    broadcastAll(clientWriters,princeCard.play(gameSession.getCurrentPlayerName()));
+                                    out.println("[Your new hand] " + gameSession.getCurrentPlayer().handToString());
+                                    break;
+                                }
+                                out.println("Prince card needs a target, please type a player's nickname.");
+                                while (true) {
+                                    String targetMessage = in.readLine();
+                                    if (nicknames.contains(targetMessage)) {
+                                        if(gameSession.getPlayer(targetMessage).isProtected()) {
+                                            out.println(gameSession.getPlayer(targetMessage).getName() + " is protected.");
+                                            break;
+                                        }
+                                        broadcastAll(clientWriters,princeCard.play(targetMessage));
+                                        clientWriters.get(targetMessage)
+                                                .println("[Your new hand] " + gameSession.getPlayer(targetMessage).
+                                                        handToString());
+                                        break;
+                                    }
+                                    else{
+                                        out.println("Can't find " + targetMessage + " in the game. Please choose a " +
+                                                "valid player.");
+                                    }
+                                }
+                            }
+
+                            // KingCard
+                            else if (cardToPlay instanceof KingCard kingCard) {
+                                out.println("King card needs a target, please type a player's nickname.");
+                                while (true) {
+                                    String targetMessage = in.readLine();
+                                    if (nicknames.contains(targetMessage)) {
+                                        if(gameSession.getCurrentPlayer().getName().equals(targetMessage)){
+                                            out.println("You can not choose yourself as target.");
+                                            continue;
+                                        }
+                                        String effect = kingCard.play(targetMessage);
+                                        broadcastAll(clientWriters, effect);
+                                        String me = gameSession.getCurrentPlayerName();
+                                        clientWriters.get(me)
+                                                .println("[Your hand] " + gameSession.getPlayer(me).handToString());
+                                        clientWriters.get(targetMessage)
+                                                .println("[Your hand] " + gameSession.getPlayer(targetMessage).handToString());
+                                        break;
+                                    }
+                                    else{
+                                        out.println("Can't find " + targetMessage + " in the game. Please choose a valid " +
+                                                "player.");
+                                    }
+                                }
+                            }
+
+                            // Default(PrincessCard)
+                            else {
+                                cardToPlay.play();
+                            }
+
+                            // Check round/game state
+                            boolean roundOver = checkRoundEnd(gameSession, clientWriters);
+                            if (roundOver) {
+                                boolean gameOver = checkGameEnd(gameSession, clientWriters);
+                                if (!gameOver) {
+                                    gameSession.reset();
+                                }
+                                continue;
+                            }
+                            String currentPlayer = gameSession.nextTurn();
+                            gameSession.getCurrentPlayer().setProtected(false);
+                            broadcastGameEvent(GameEventType.TURN, clientWriters, currentPlayer);
+                            gameSession.currentPlayerDrawCard();
+                            clientWriters.get(gameSession.getCurrentPlayer().getName()).println(gameSession.
+                                    getCurrentPlayer().handToString());
                         }
-                    }
-                    continue;
+                        continue;
                 }
 
-                if (msg.startsWith("/play ")) {
-                    synchronized (gameSession) {
-                        if (!gameSession.isCreated()) {
-                            out.println("Error: No game in progress.");
-                            continue;
-                        }
-                        if (!gameSession.isStarted()) {
-                            out.println("Error: The game has not started yet.");
-                            continue;
-                        }
-                        if (!gameSession.getCurrentPlayerName().equals(nickname)) {
-                            out.println("It's not your turn.");
-                            continue;
-                        }
-                        if (!gameSession.getPlayersNickname().contains(nickname)) {
-                            out.println("You are not part of the game.");
-                            continue;
-                        }
 
-                        Player player = gameSession.getPlayer(nickname);
-                        if (player == null || player.isEliminated()) {
-                            out.println("Error: Invalid player or already eliminated.");
-                            continue;
-                        }
-
-                        // Example format: /play 0 or /play 1
-                        String[] parts = msg.split(" ");
-                        if (parts.length != 2) {
-                            out.println("Usage: /play <0 or 1>");
-                            continue;
-                        }
-
-                        int cardIndex;
-                        try {
-                            cardIndex = Integer.parseInt(parts[1]);
-                        } catch (NumberFormatException e) {
-                            out.println("Usage: /play <0 or 1>");
-                            continue;
-                        }
-
-                        if (cardIndex < 0 || cardIndex > 1 || player.getHand().size() <= cardIndex) {
-                            out.println("Invalid card index.");
-                            continue;
-                        }
-
-                        Card cardToPlay = player.getHand().get(cardIndex);
-                        player.playCard(cardIndex); // Remove from hand
-                        broadcastGameEvent(GameEventType.TURN, clientWriters, nickname + " played " +
-                                cardToPlay.getName());
-                        if (cardToPlay instanceof PrincessCard) {
-                            broadcastGameEvent(GameEventType.ELIMINATED, clientWriters, nickname);
-                            out.println("[RULE] You discarded the Princess and are eliminated from the round.");
-                        }
-
-                        // GuardCard
-                        if (cardToPlay instanceof GuardCard guardCard) {
-                            if (parts.length < 4) {
-                                out.println("Usage: /play 0 <targetName> <guessCard>");
-                                continue;
-                            }
-                            String targetName = parts[2];
-                            String guess = parts[3];
-                            guardCard.play(targetName, guess);
-                        }
-
-                        // PriestCard
-                        else if (cardToPlay instanceof PriestCard priestCard) {
-                            if (parts.length < 3) {
-                                out.println("Usage: /play 0 <targetName>");
-                                continue;
-                            }
-
-                            String targetName = parts[2];
-                            priestCard.play(targetName);
-                        }
-
-                        // BaronCard
-                        else if (cardToPlay instanceof BaronCard baronCard) {
-                            if (parts.length < 3) {
-                                out.println("Usage: /play 0 <targetName>");
-                                continue;
-                            }
-                            String targetName = parts[2];
-                            baronCard.play(targetName);
-                        }
-
-                        // HandmaidCard
-                        else if (cardToPlay instanceof HandmaidCard handmaidCard) {
-                            handmaidCard.play();  // 调用 play() 方法内会自动设置玩家 protected=true
-                            out.println("You are protected until your next turn.");
-                        }
-
-                        // PrinceCard
-                        else if (cardToPlay instanceof PrinceCard princeCard) {
-                            if (parts.length < 3) {
-                                out.println("Usage: /play 0 <targetName>");
-                                continue;
-                            }
-
-                            princeCard.play(parts[2]);
-                        }
-
-                        // KingCard
-                        else if (cardToPlay instanceof KingCard kingCard) {
-                            if (parts.length < 3) {
-                                out.println("Usage: /play 0 <targetName>");
-                                continue;
-                            }
-                            kingCard.play(parts[2]);
-                        }
-
-                        // Countess
-                        List<Card> hand = player.getHand();
-                        boolean hasCountess = hand.stream().anyMatch(c -> c instanceof CountessCard);
-                        boolean hasPrinceOrKing = hand.stream().anyMatch(c -> c instanceof PrinceCard || c instanceof KingCard);
-
-                        if (hasCountess && hasPrinceOrKing && !(cardToPlay instanceof CountessCard)) {
-                            out.println("[RULE] You must play the Countess if you have her with a King or Prince.");
-                            continue;
-                        }
-
-                        // Default(PrincessCard)
-                        else {
-                            cardToPlay.play();
-                        }
-
-                        // Check round/game state
-                        boolean roundOver = checkRoundEnd(gameSession, clientWriters);
-                        if (roundOver) {
-                            boolean gameOver = checkGameEnd(gameSession, clientWriters);
-                            if (!gameOver) {
-                                gameSession.reset();
-                            }
-                            continue;
-                        }
-
-                        // Go to next turn
-                        String nextPlayer = gameSession.nextTurn();
-                        broadcastGameEvent(GameEventType.TURN, clientWriters, nextPlayer);
-
-                    }
-                    continue;
-                }
 
 
                 //Show Player Score

@@ -45,7 +45,7 @@ public class HandmaidCard extends Card {
     public void play(int target) {
     }
 
-    public void play(String targetName) {
+    public String play(String targetName) {
         throw new UnsupportedOperationException("Handmaid does not support targeted play.");
     }
 

@@ -9,6 +9,7 @@ public class Player {
     private boolean isOut;
     private int score = 0;
     private boolean eliminated = false;
+    private int discardedCards = 0;
 
     public Player(String name) {
         this.name = name;
@@ -29,6 +30,18 @@ public class Player {
         return hand.remove(cardNumber);
     }
 
+    //only play countness card, another overload of the playCard function
+    public Card playCard() {
+        int cardNumber;
+        for(Card card : hand) {
+            if (card.getName().equals("Countess Wilhelmina")) {
+                hand.remove(card);
+                return card;
+            }
+        }
+        return null;
+    }
+
     //public Card playCard(int cardNumber) {
         //Card playedCard = null;
         //cardNumber only could be 0 or 1. 0 for old card, 1 for the new card.
@@ -46,6 +59,22 @@ public class Player {
     // 获取当前手牌（只读副本）
     public List<Card> getHand() {
         return this.hand;
+    }
+    public String handToString() {
+        StringBuilder result = new StringBuilder("Your hand: ");
+        for (Card card : hand) {
+            result.append(card.getName());
+            result.append(" ");
+        }
+        return result.toString();
+    }
+    public Card returnCountess(){
+        for (Card card : hand) {
+            if(card.getName().equals("Countess")){
+                return card;
+            }
+        }
+        return null;
     }
 
     //添加一个用于获取手牌中另一张的便捷方法（用于卡牌比较）
@@ -83,6 +112,9 @@ public class Player {
 
     public void setHand(List<Card> hand) {
         this.hand = hand;
+    }
+    public void drawCard(Card card) {
+        this.hand.add(card);
     }
 
     // HandmaidCard

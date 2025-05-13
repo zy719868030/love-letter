@@ -56,7 +56,7 @@ public class PrincessCard extends Card {
         throw new UnsupportedOperationException("Princess does not target any player.");
     }
 
-    public void play(String targetName) {
+    public String play(String targetName) {
         throw new UnsupportedOperationException("Princess does not target any player.");
     }
 }
